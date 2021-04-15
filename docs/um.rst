@@ -29,17 +29,47 @@ the migrating tidal signal, and the mean and standard deviation of the total fie
 calculations were carried out for neutral density, temperature, zonal wind and
 meridional wind.
 
+Subroutines for the UM part of the MCM model are available in the :ref:`m_um: Unified Model (UM)` module.
+
+
+Solar cycle classification
+--------------------------
+
+Three years were chosen to represent three corresponding levels in terms of solar activity.
+
+The driver to select between each year is the F10.7 flux 81-day average (`f107m` argument in the code) following this rule:
+
++---------------------+----------------------+-----------------------+
+| Year                | Solar activity level | `f107m`               |
++---------------------+----------------------+-----------------------+
+| Jan-Dec 2002        | High                 | > 160.0               |
++---------------------+----------------------+-----------------------+
+| Jan-Dec 2004        | Medium               | between 120 and 160   |
++---------------------+----------------------+-----------------------+
+| Jul 2008 – Jun 2009 | Low                  | < 120.0               |
++---------------------+----------------------+-----------------------+
+
+
+Standard deviation
+------------------
+
+The UM model also provides the standard deviation of the temperature and the density through the :func:`m_um/get_um_temp_standard_deviation` and :func:`m_um/get_um_dens_standard_deviation` subroutines, respectively.
+
 
 Winds
 -----
 
-.. todo:: 
-   
-   Write winds stuff
+X wind and Y wind denote zonal wind and meridional wind, respectively. 
+Zonal wind is the horizontal wind in the east-west direction (eastward positive, westward negative) 
+and meridional wind is the horizontal wind in  the north-south direction (northward positive, southward negative).
+
+There are two subroutines available to retrieve them: :func:`m_um/get_um_xwind` and :func:`m_um/get_um_ywind`
 
 
 
 
 .. admonition:: Contact information
 
-   contact information MO
+   Dr. David Jackson (Met Office, UK)
+   
+   david.jackson [at] metoffice.gov.uk

@@ -31,6 +31,8 @@ The thermosphere model **DTM2020** is also available separately. Two versions ex
 Acknowledgements
 ----------------
 
+Contact information: http://swami-h2020.eu/contact-us/
+
 .. |cnes_logo| image:: _static/cnes.png
    :scale: 80%
    :align: middle
