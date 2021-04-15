@@ -8,6 +8,8 @@ The semi-empirical Drag Temperature Model (DTM) predicts temperature, density an
 
 The backbone of the models is the complete CHAMP and GOCE high-resolution accelerometer-inferred density datasets, as well as SwarmA densities. Those density datasets were processed by TU Delft (Netherlands) using high fidelity satellite models and they are presently the standard for absolute density. As a result, the DTM2020 densities are on average 20-25% smaller than DTM2013.
 
+The DTM2020 subroutines present in the MCM model are available at the :ref:`m_dtm: Drag Temperature Model (DTM)` module.
+
 
 Density uncertainty
 -------------------
@@ -188,10 +190,8 @@ A simple benchmark is provided in the program Mod_DTM2020F30Hp60_Benchmark.f90 (
 
 
 
-
-
-
-
 .. admonition:: Contact information
 
-   contact information CNES
+   Dr. Sean Bruinsma (CNES, France)
+
+   sean.bruinsma [at] cnes.fr

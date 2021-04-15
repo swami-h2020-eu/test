@@ -204,6 +204,7 @@
 <h2>Description of the model<a class="headerlink" href="#description-of-the-model" title="Permalink to this headline">¶</a></h2>
 <p>The semi-empirical Drag Temperature Model (DTM) predicts temperature, density and composition of the Earth’s thermosphere, especially for the purpose of orbit computation. Operational and Research DTM2020 models were developed in the framework of the H2020 Space Weather Atmosphere Models and Indices project (SWAMI). The models provide low spatial and temporal resolution point-wise predictions as a function of location (altitude, latitude, longitude, local solar time), solar and geomagnetic activities, and season. The drivers of the operational model are F10.7 and Kp, whereas the more accurate research model uses a more representative but possibly less robust solar proxy, F30, and the new hourly geomagnetic index Hp60. The DTM2020 models are constructed by optimally fitting model coefficients to density, temperature, and composition measurements.</p>
 <p>The backbone of the models is the complete CHAMP and GOCE high-resolution accelerometer-inferred density datasets, as well as SwarmA densities. Those density datasets were processed by TU Delft (Netherlands) using high fidelity satellite models and they are presently the standard for absolute density. As a result, the DTM2020 densities are on average 20-25% smaller than DTM2013.</p>
+<p>The DTM2020 subroutines present in the MCM model are available at the <a class="reference internal" href="fortran.html#m-dtm-drag-temperature-model-dtm"><span class="std std-ref">m_dtm: Drag Temperature Model (DTM)</span></a> module.</p>
 </div>
 <div class="section" id="density-uncertainty">
 <h2>Density uncertainty<a class="headerlink" href="#density-uncertainty" title="Permalink to this headline">¶</a></h2>
@@ -369,7 +370,8 @@ Then call the dtm5 subroutine:</p>
 <p>A simple benchmark is provided in the program Mod_DTM2020F30Hp60_Benchmark.f90 (compile and run)</p>
 <div class="admonition-contact-information admonition">
 <p class="admonition-title">Contact information</p>
-<p>contact information CNES</p>
+<p>Dr. Sean Bruinsma (CNES, France)</p>
+<p>sean.bruinsma [at] cnes.fr</p>
 </div>
 </div>
 </div>
