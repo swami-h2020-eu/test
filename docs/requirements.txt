@@ -1,5 +1,7 @@
 sphinx
 sphinx-rtd-theme
+pygments>=2.4.1
 sphinx-autoapi
 nbsphinx
 ipython
+sphinx-fortran
