@@ -9,7 +9,7 @@ The thermosphere model DTM2020 is also available separately. Two versions exist:
 
 ## Documentation
 
-The documentation is available at https://swami-h2020-eu.github.io/test/contents.htmlç
+The documentation is available at https://swami-h2020-eu.github.io/test/contents.html
 
 It includes API reference, brief descriptions of the model, examples and compilation instructions
 
