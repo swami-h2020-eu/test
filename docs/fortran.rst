@@ -81,15 +81,94 @@ This module contains routines related to the MCM model, which combines the DTM (
 
 .. code-block:: fortran
     
-    init_mcm(path_to_data_um, path_to_data_dtm)
-    get_mcm_dens(dens, alti, lati, long, loct, doy, f107, f107m, kps(2))
-    get_mcm_temp(temp, alti, lati, long, loct, doy, f107, f107m, kps(2))
-    
+    call init_mcm(path_to_data_um, path_to_data_dtm)
+    call get_mcm_dens(dens, alti, lati, long, loct, doy, f107, f107m, kps(2))
+    call get_mcm_temp(temp, alti, lati, long, loct, doy, f107, f107m, kps(2))
+    call get_mcm(mcm_out, alti, lati, long, loct, doy, f107, f107m, kps(2))
+
+
 .. f:autosubroutine:: m_mcm/init_mcm
 
 .. f:autosubroutine:: m_mcm/get_mcm_dens
 
 .. f:autosubroutine:: m_mcm/get_mcm_temp
+
+.. f:autosubroutine:: m_mcm/get_mcm
+
+.. f:autotype:: m_mcm/t_mcm_out
+
+.. py:class:: t_mcm_out
+
+   .. py:attribute:: dens
+      :type: float
+
+      Total density (in gram/cm3)
+
+   .. py:attribute:: temp
+      :type: float
+      
+      Temperature at altitude (K)
+
+   .. py:attribute:: wmm
+      :type: float
+
+      Mean molecular mass (in gram)
+   .. py:attribute:: d_H
+      :type: float
+
+      Partial density of atomic hydrogen (in gram/cm3)
+   .. py:attribute:: d_He
+      :type: float
+
+      Partial density of helium
+   .. py:attribute:: d_O
+      :type: float
+
+      Partial density of atomic oxygen
+   .. py:attribute:: d_N2
+      :type: float
+
+      Partial density of molecular nitrogen
+   .. py:attribute:: d_O2
+      :type: float
+
+      Partial density of molecular oxygen
+   .. py:attribute:: d_N
+      :type: float
+
+      Partial density of atomic nitrogen
+   .. py:attribute:: tinf
+      :type: float
+
+      Exospheric temperature, in K
+   .. py:attribute:: dens_unc
+      :type: float
+
+      Density uncertainty from DTM2020 (above 120 km), as a percentage
+   .. py:attribute:: dens_std
+      :type: float
+
+      Standard deviation of the density (UM, below 100 km), in g/cm3
+   .. py:attribute:: temp_std
+      :type: float
+
+      Standard deviation of the temperature (UM, below 100 km), in K
+   .. py:attribute:: xwind
+      :type: float
+
+      Zonal wind, in m/s
+   .. py:attribute:: ywind
+      :type: float
+
+      Meridional wind, m/s
+   .. py:attribute:: xwind_std
+      :type: float
+
+      Standard deviation of zonal wind, in m/s
+   .. py:attribute:: ywind_std
+      :type: float
+
+      Standard deviation of neridional wind, m/s
 
 
 m_dtm: Drag Temperature Model (DTM)
@@ -101,16 +180,72 @@ Go to :ref:`Drag Temperature Model (DTM2020)`) for some theoretical details abou
 
 .. code-block:: fortran
 
-    init_dtm2020(path_to_data_dtm_file)
-    get_dtm2020(dens, temp, alti, lati, long, loct, doy, f107, f107m, kps(2))
+    call init_dtm2020(path_to_data_dtm_file)
+    call get_dtm2020(dens, temp, alti, lati, long, loct, doy, f107, f107m, kps(2))
+    call get_dtm2020_dens_uncertainty(dens_unc, temp, alti, lati, long, loct, doy, f107, f107m, kps(2))
+
 
 .. f:autovariable:: m_dtm/DTM2020_DATA_FILENAME
+
+.. py:data:: DTM2020_DATA_FILENAME
+   :type: string
+   :value: "DTM_2020_F107_Kp.dat"
 
 .. f:autosubroutine:: m_dtm/init_dtm2020
 
 .. f:autosubroutine:: m_dtm/get_dtm2020
 
 .. f:autosubroutine:: m_dtm/get_dtm2020_dens_uncertainty
+
+.. py:class:: t_mcm_out
+
+      .. py:attribute:: dens
+         :type: float
+      
+         Total density (in gram/cm3)
+
+      .. py:attribute:: temp
+         :type: float
+      
+         Temperature at altitude (K)
+
+      .. py:attribute:: wmm
+         :type: float
+      
+         Mean molecular mass (in gram)
+      .. py:attribute:: d_H
+         :type: float
+      
+         Partial density of atomic hydrogen (in gram/cm3)
+
+      .. py:attribute:: d_He
+         :type: float
+      
+         Partial density of helium
+      .. py:attribute:: d_O
+         :type: float
+      
+         Partial density of atomic oxygen
+
+      .. py:attribute:: d_N2
+         :type: float
+      
+         Partial density of molecular nitrogen
+
+      .. py:attribute:: d_O2
+         :type: float
+      
+         Partial density of molecular oxygen
+
+      .. py:attribute:: d_N
+         :type: float
+      
+         Partial density of atomic nitrogen
+
+      .. py:attribute:: tinf
+         :type: float
+      
+         Exospheric temperature, in K
 
 
 m_um: Unified Model (UM)
@@ -122,11 +257,16 @@ Go to :ref:`Unified Model (UM)`) for some theoretical details about the model.
 
 .. code-block:: fortran
 
-    init_um(path_to_data_um)
-    get_um_dens(dens, alti, lati, long, loct, doy, f107, f107m, kps(2))
-    get_um_temp(temp, alti, lati, long, loct, doy, f107, f107m, kps(2))
-    get_um_xwind(xwind, alti, lati, long, loct, doy, f107, f107m, kps(2))
-    get_um_ywind(ywind, alti, lati, long, loct, doy, f107, f107m, kps(2))
+    call init_um(path_to_data_um)
+    call get_um_dens(dens, alti, lati, long, loct, doy, f107, f107m, kps(2))
+    call get_um_temp(temp, alti, lati, long, loct, doy, f107, f107m, kps(2))
+    call get_um_xwind(xwind, alti, lati, long, loct, doy, f107, f107m, kps(2))
+    call get_um_ywind(ywind, alti, lati, long, loct, doy, f107, f107m, kps(2))
+    call get_um_dens_standard_deviation(dens_std, alti, lati, long, loct, doy, f107, f107m, kps(2))
+    call get_um_temp_standard_deviation(temp_std, alti, lati, long, loct, doy, f107, f107m, kps(2))
+    call get_um_xwind_standard_deviation(xwind_std, alti, lati, long, loct, doy, f107, f107m, kps(2))
+    call get_um_ywind_standard_deviation(ywind_std, alti, lati, long, loct, doy, f107, f107m, kps(2))
+
 
 .. f:autosubroutine:: m_um/init_um
 
@@ -134,11 +274,15 @@ Go to :ref:`Unified Model (UM)`) for some theoretical details about the model.
 
 .. f:autosubroutine:: m_um/get_um_temp
 
+.. f:autosubroutine:: m_um/get_um_xwind
+
+.. f:autosubroutine:: m_um/get_um_ywind
+
 .. f:autosubroutine:: m_um/get_um_dens_standard_deviation
 
 .. f:autosubroutine:: m_um/get_um_temp_standard_deviation
 
-.. f:autosubroutine:: m_um/get_um_xwind
+.. f:autosubroutine:: m_um/get_um_xwind_standard_deviation
 
-.. f:autosubroutine:: m_um/get_um_ywind
+.. f:autosubroutine:: m_um/get_um_ywind_standard_deviation
 

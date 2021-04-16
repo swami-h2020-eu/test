@@ -8,7 +8,7 @@
 ! – Purpose : Handle UM datatables
 ! - Component : m_um
 ! ---------------------------------------------------------------------
-! – © Copyright Deimos Space SLU, 2021
+! – MetOffice, Deimos Space SLU, 2021
 ! – All rights reserved
 ! ---------------------------------------------------------------------
 
@@ -49,6 +49,8 @@ module m_um
     public :: get_um_ywind
     public :: get_um_temp_standard_deviation
     public :: get_um_dens_standard_deviation
+    public :: get_um_xwind_standard_deviation
+    public :: get_um_ywind_standard_deviation
     public :: load_um_file, interpolate_um_var_linear, interpolate_um_var_nearest
     public :: t_um_dimension, t_um_variable
 
@@ -67,7 +69,7 @@ module m_um
         integer :: id                            ! ID
         integer, dimension(4) :: shape           ! Shape of the data
         real(8), allocatable :: data(:, :, :, :) ! Data array
-        type(t_um_dimension) :: time             ! time (???)
+        type(t_um_dimension) :: time             ! time
         type(t_um_dimension) :: lati             ! latitude [0, 360)
         type(t_um_dimension) :: loct             ! local time [0, 24)
         type(t_um_dimension) :: alti             ! altitude [0, inf)
@@ -298,7 +300,6 @@ contains
 
     subroutine convert_doy_to_um_time(doy, solar_cycle_class, um_time)
         ! Convert day of year to UM time [WIP]
-        ! .. todo:: no actual conversion right now
 
         implicit none
         real(8), intent(in) :: doy                  ! Day of year
@@ -379,6 +380,87 @@ contains
 
     end subroutine get_um_filename
 
+    subroutine get_um_var_std(var, varname, alti, lati, longi, loct, doy, f107, f107m, kps)
+        ! Get standard deviation for a variable from UM tables, interpolating if necessary
+
+        implicit none
+        real(8), intent(out) :: var         ! Variable value
+        character(*), intent(in) :: varname ! Variable name
+        real(8), intent(in) :: alti         ! Altitude, in km [0-152]
+        real(8), intent(in) :: lati         ! Latitude, in degrees [-90, 90]
+        real(8), intent(in) :: longi        ! Longitude, in degrees [0, 360)
+        real(8), intent(in) :: loct         ! Local time, in hours [0-24)
+        real(8), intent(in) :: doy          ! Day of the year [0-366)
+        real(8), intent(in) :: f107         ! Space weather index F10.7, instantaneous flux at (t - 24hr)
+        real(8), intent(in) :: f107m        ! Space weather index F10.7, average flux at time
+        real(8), intent(in) :: kps(2)       ! Space weather index: kp delayed by 3 hours (1st value), kp mean of last 24 hours (2nd value)
+
+        real(8) :: um_time, alti_m
+        integer :: solar_cycle_class, ier
+        character(len=UM_FNAME_LENGTH) :: um_fname
+        type(t_um_variable) :: um_var
+
+        ! prepare some variables
+        alti_m = km2m*alti
+        call classify_solar_cycle(f107m, solar_cycle_class)
+        call convert_doy_to_um_time(doy, solar_cycle_class, um_time)
+
+        ! generate the correct filename
+        call get_um_filename(varname, UM_VAR_TYPE_STD, solar_cycle_class, um_fname)
+
+        ! Load UM data from file
+        um_fname = trim(path_to_um_data)//trim(um_fname)
+        call load_um_file(um_fname, varname, um_var, ier)
+
+        ! interpolate
+        call interpolate_um_var_nearest(um_var, alti_m, lati, loct, um_time, var)
+
+    end subroutine get_um_var_std
+
+    subroutine get_um_var_mean(var, varname, alti, lati, longi, loct, doy, f107, f107m, kps, apply_log10)
+        ! Get monthly mean value for a variable from UM tables, interpolating if necessary
+
+        implicit none
+        real(8), intent(out) :: var                     ! Variable value
+        character(*), intent(in) :: varname             ! Variable name
+        real(8), intent(in) :: alti                     ! Altitude, in km [0-152]
+        real(8), intent(in) :: lati                     ! Latitude, in degrees [-90, 90]
+        real(8), intent(in) :: longi                    ! Longitude, in degrees [0, 360)
+        real(8), intent(in) :: loct                     ! Local time, in hours [0-24)
+        real(8), intent(in) :: doy                      ! Day of the year [0-366)
+        real(8), intent(in) :: f107                     ! Space weather index F10.7, instantaneous flux at (t - 24hr)
+        real(8), intent(in) :: f107m                    ! Space weather index F10.7, average flux at time
+        real(8), intent(in) :: kps(2)                   ! Space weather index: kp delayed by 3 hours (1st value), kp mean of last 24 hours (2nd value)
+        logical, intent(in), optional :: apply_log10(4) ! Axis where to apply log10 in interpolation
+
+        real(8) :: um_time, alti_m
+        integer :: solar_cycle_class, ier
+        character(len=UM_FNAME_LENGTH) :: um_fname
+        type(t_um_variable) :: um_var
+        logical :: interpolate_log10(4) = [.false., .false., .false., .false.] ! interpolate altitude with log10
+
+        ! prepare some variables
+        alti_m = km2m*alti
+        call classify_solar_cycle(f107m, solar_cycle_class)
+        call convert_doy_to_um_time(doy, solar_cycle_class, um_time)
+
+        ! generate the correct filename
+        call get_um_filename(varname, UM_VAR_TYPE_MEAN, solar_cycle_class, um_fname)
+
+        ! Load UM data from file
+        um_fname = trim(path_to_um_data)//trim(um_fname)
+        call load_um_file(um_fname, varname, um_var, ier)
+
+        ! interpolate
+        if (present(apply_log10)) then
+            interpolate_log10 = apply_log10
+        end if
+
+        call interpolate_um_var_linear(um_var, alti_m, lati, loct, um_time, var, &
+                                       apply_log10=interpolate_log10)
+
+    end subroutine get_um_var_mean
+
     subroutine get_um_temp(temp, alti, lati, longi, loct, doy, f107, f107m, kps)
         ! Get air temperature from UM tables, interpolating if necessary
 
@@ -393,26 +475,8 @@ contains
         real(8), intent(in) :: f107m    ! Space weather index F10.7, average flux at time
         real(8), intent(in) :: kps(2)   ! Space weather index: kp delayed by 3 hours (1st value), kp mean of last 24 hours (2nd value)
 
-        real(8) :: um_time, alti_m
-        integer :: solar_cycle_class, ier
-        character(len=UM_FNAME_LENGTH) :: um_fname
-        type(t_um_variable) :: um_var
-
-        ! prepare some variables
-        alti_m = km2m*alti
-        call classify_solar_cycle(f107m, solar_cycle_class)
-        call convert_doy_to_um_time(doy, solar_cycle_class, um_time)
-
-        ! generate the correct filename
-        call get_um_filename(UM_NAME_TEMP, UM_VAR_TYPE_MEAN, solar_cycle_class, um_fname)
-
-        ! Load UM data from file
-        um_fname = trim(path_to_um_data)//trim(um_fname)
-        ! if (DEBUG) print *, "loading ", um_fname
-        call load_um_file(um_fname, UM_NAME_TEMP, um_var, ier)
-
-        ! interpolate
-        call interpolate_um_var_linear(um_var, alti_m, lati, loct, um_time, temp)
+        call get_um_var_mean(temp, UM_NAME_TEMP, alti, lati, longi, loct, &
+                             doy, f107, f107m, kps)
 
     end subroutine get_um_temp
 
@@ -430,27 +494,8 @@ contains
         real(8), intent(in) :: f107m   ! Space weather index F10.7, average flux at time
         real(8), intent(in) :: kps(2)  ! Space weather index: kp delayed by 3 hours (1st value), kp mean of last 24 hours (2nd value)
 
-        real(8) :: um_time, alti_m
-        integer :: solar_cycle_class, ier
-        character(len=UM_FNAME_LENGTH) :: um_fname
-        type(t_um_variable) :: um_var
-        logical :: interpolate_log10(4) = [.true., .false., .false., .false.] ! interpolate altitude with log10
-
-        ! prepare some variables
-        alti_m = km2m*alti
-        call classify_solar_cycle(f107m, solar_cycle_class)
-        call convert_doy_to_um_time(doy, solar_cycle_class, um_time)
-
-        ! generate the correct filename
-        call get_um_filename(UM_NAME_DENS, UM_VAR_TYPE_MEAN, solar_cycle_class, um_fname)
-
-        ! Load UM data from file
-        um_fname = trim(path_to_um_data)//trim(um_fname)
-        call load_um_file(um_fname, UM_NAME_DENS, um_var, ier)
-
-        ! interpolate
-        call interpolate_um_var_linear(um_var, alti_m, lati, loct, um_time, dens, &
-                                       apply_log10=interpolate_log10)
+        call get_um_var_mean(dens, UM_NAME_DENS, alti, lati, longi, loct, doy, &
+                             f107, f107m, kps, apply_log10=[.true., .false., .false., .false.])
 
         ! Convert kg/m3 to g/cm3
         dens = dens*1d-3
@@ -471,32 +516,15 @@ contains
         real(8), intent(in) :: f107m   ! Space weather index F10.7, average flux at time
         real(8), intent(in) :: kps(2)  ! Space weather index: kp delayed by 3 hours (1st value), kp mean of last 24 hours (2nd value)
 
-        real(8) :: um_time, alti_m
-        integer :: solar_cycle_class, ier
-        character(len=UM_FNAME_LENGTH) :: um_fname
-        type(t_um_variable) :: um_var_std
-
-        ! prepare some variables
-        alti_m = km2m*alti
-        call classify_solar_cycle(f107m, solar_cycle_class)
-        call convert_doy_to_um_time(doy, solar_cycle_class, um_time)
-
-        ! generate the correct filename
-        call get_um_filename(UM_NAME_DENS, UM_VAR_TYPE_STD, solar_cycle_class, um_fname)
-
-        ! Load UM data from file
-        um_fname = trim(path_to_um_data)//trim(um_fname)
-        call load_um_file(um_fname, UM_NAME_DENS, um_var_std, ier)
-
-        ! interpolate
-        call interpolate_um_var_nearest(um_var_std, alti_m, lati, loct, um_time, std)
+        call get_um_var_std(std, UM_NAME_DENS, alti, lati, longi, loct, &
+                            doy, f107, f107m, kps)
 
         ! Convert kg/m3 to g/cm3
         std = std*1d-3
     end subroutine get_um_dens_standard_deviation
 
     subroutine get_um_temp_standard_deviation(std, alti, lati, longi, loct, doy, f107, f107m, kps)
-        ! Get the standard temperature of the air density from UM tables, using the nearest value
+        ! Get the standard deviation of the air temperature from UM tables, using the nearest value
 
         implicit none
         real(8), intent(out) :: std    ! Standard deviation of the temperature [K]
@@ -509,25 +537,8 @@ contains
         real(8), intent(in) :: f107m   ! Space weather index F10.7, average flux at time
         real(8), intent(in) :: kps(2)  ! Space weather index: kp delayed by 3 hours (1st value), kp mean of last 24 hours (2nd value)
 
-        real(8) :: um_time, alti_m
-        integer :: solar_cycle_class, ier
-        character(len=UM_FNAME_LENGTH) :: um_fname
-        type(t_um_variable) :: um_var_std
-
-        ! prepare some variables
-        alti_m = km2m*alti
-        call classify_solar_cycle(f107m, solar_cycle_class)
-        call convert_doy_to_um_time(doy, solar_cycle_class, um_time)
-
-        ! generate the correct filename
-        call get_um_filename(UM_NAME_TEMP, UM_VAR_TYPE_STD, solar_cycle_class, um_fname)
-
-        ! Load UM data from file
-        um_fname = trim(path_to_um_data)//trim(um_fname)
-        call load_um_file(um_fname, UM_NAME_TEMP, um_var_std, ier)
-
-        ! interpolate
-        call interpolate_um_var_nearest(um_var_std, alti_m, lati, loct, um_time, std)
+        call get_um_var_std(std, UM_NAME_TEMP, alti, lati, longi, loct, &
+                            doy, f107, f107m, kps)
 
     end subroutine get_um_temp_standard_deviation
 
@@ -535,7 +546,7 @@ contains
         ! Get X wind from UM tables, interpolating if necessary
 
         implicit none
-        real(8), intent(out) :: xwind  ! Air temperature, in K
+        real(8), intent(out) :: xwind  ! X wind, in m/s
         real(8), intent(in) :: alti    ! Altitude, in km [0-152]
         real(8), intent(in) :: lati    ! Latitude, in degrees [-90, 90]
         real(8), intent(in) :: longi   ! Longitude, in degrees [0, 360)
@@ -545,26 +556,8 @@ contains
         real(8), intent(in) :: f107m   ! Space weather index F10.7, average flux at time
         real(8), intent(in) :: kps(2)  ! Space weather index: kp delayed by 3 hours (1st value), kp mean of last 24 hours (2nd value)
 
-        real(8) :: um_time, alti_m
-        integer :: solar_cycle_class, ier = 0
-        character(len=UM_FNAME_LENGTH) :: um_fname
-        type(t_um_variable) :: um_var
-
-        ! prepare some variables
-        alti_m = km2m*alti
-        call classify_solar_cycle(f107m, solar_cycle_class)
-        call convert_doy_to_um_time(doy, solar_cycle_class, um_time)
-        
-        ! generate the correct filename
-        call get_um_filename(UM_NAME_XWIND, UM_VAR_TYPE_MEAN, solar_cycle_class, um_fname, ier)
-        
-        ! Load UM data from file
-        um_fname = trim(path_to_um_data)//trim(um_fname)
-        ! if (DEBUG_UM) print *, "loading ", um_fname
-        call load_um_file(um_fname, UM_NAME_XWIND, um_var, ier)
-        
-        ! interpolate
-        call interpolate_um_var_linear(um_var, alti_m, lati, loct, um_time, xwind)
+        call get_um_var_mean(xwind, UM_NAME_XWIND, alti, lati, longi, loct, &
+                             doy, f107, f107m, kps)
 
     end subroutine get_um_xwind
 
@@ -572,7 +565,7 @@ contains
         ! Get Y wind from UM tables, interpolating if necessary
 
         implicit none
-        real(8), intent(out) :: ywind   ! Air temperature, in K
+        real(8), intent(out) :: ywind   ! Y wind, in m/s
         real(8), intent(in) :: alti     ! Altitude, in km [0-152]
         real(8), intent(in) :: lati     ! Latitude, in degrees [-90, 90]
         real(8), intent(in) :: longi    ! Longitude, in degrees [0, 360)
@@ -582,27 +575,47 @@ contains
         real(8), intent(in) :: f107m    ! Space weather index F10.7, average flux at time
         real(8), intent(in) :: kps(2)   ! Space weather index: kp delayed by 3 hours (1st value), kp mean of last 24 hours (2nd value)
 
-        real(8) :: um_time, alti_m
-        integer :: solar_cycle_class, ier
-        character(len=UM_FNAME_LENGTH) :: um_fname
-        type(t_um_variable) :: um_var
-
-        ! prepare some variables
-        alti_m = km2m*alti
-        call classify_solar_cycle(f107m, solar_cycle_class)
-        call convert_doy_to_um_time(doy, solar_cycle_class, um_time)
-
-        ! generate the correct filename
-        call get_um_filename(UM_NAME_YWIND, UM_VAR_TYPE_MEAN, solar_cycle_class, um_fname)
-
-        ! Load UM data from file
-        um_fname = trim(path_to_um_data)//trim(um_fname)
-        ! if (DEBUG) print *, "loading ", um_fname
-        call load_um_file(um_fname, UM_NAME_YWIND, um_var, ier)
-
-        ! interpolate
-        call interpolate_um_var_linear(um_var, alti_m, lati, loct, um_time, ywind)
+        call get_um_var_mean(ywind, UM_NAME_YWIND, alti, lati, longi, loct, &
+                             doy, f107, f107m, kps)
 
     end subroutine get_um_ywind
+
+    subroutine get_um_xwind_standard_deviation(std, alti, lati, longi, loct, doy, f107, f107m, kps)
+        ! Get the standard deviation of the X wind from UM tables, using the nearest value
+
+        implicit none
+        real(8), intent(out) :: std    ! Standard deviation of the X wind [m/s]
+        real(8), intent(in) :: alti    ! Altitude, in km [0-152]
+        real(8), intent(in) :: lati    ! Latitude, in degrees [-90, 90]
+        real(8), intent(in) :: longi   ! Longitude, in degrees [0, 360)
+        real(8), intent(in) :: loct    ! Local time, in hours [0-24)
+        real(8), intent(in) :: doy     ! Day of the year [0-366)
+        real(8), intent(in) :: f107    ! Space weather index F10.7, instantaneous flux at (t - 24hr)
+        real(8), intent(in) :: f107m   ! Space weather index F10.7, average flux at time
+        real(8), intent(in) :: kps(2)  ! Space weather index: kp delayed by 3 hours (1st value), kp mean of last 24 hours (2nd value)
+
+        call get_um_var_std(std, UM_NAME_XWIND, alti, lati, longi, loct, &
+                            doy, f107, f107m, kps)
+
+    end subroutine get_um_xwind_standard_deviation
+
+    subroutine get_um_ywind_standard_deviation(std, alti, lati, longi, loct, doy, f107, f107m, kps)
+        ! Get the standard deviation of the Y wind from UM tables, using the nearest value
+
+        implicit none
+        real(8), intent(out) :: std    ! Standard deviation of the Y wind [m/s]
+        real(8), intent(in) :: alti    ! Altitude, in km [0-152]
+        real(8), intent(in) :: lati    ! Latitude, in degrees [-90, 90]
+        real(8), intent(in) :: longi   ! Longitude, in degrees [0, 360)
+        real(8), intent(in) :: loct    ! Local time, in hours [0-24)
+        real(8), intent(in) :: doy     ! Day of the year [0-366)
+        real(8), intent(in) :: f107    ! Space weather index F10.7, instantaneous flux at (t - 24hr)
+        real(8), intent(in) :: f107m   ! Space weather index F10.7, average flux at time
+        real(8), intent(in) :: kps(2)  ! Space weather index: kp delayed by 3 hours (1st value), kp mean of last 24 hours (2nd value)
+
+        call get_um_var_std(std, UM_NAME_YWIND, alti, lati, longi, loct, &
+                            doy, f107, f107m, kps)
+
+    end subroutine get_um_ywind_standard_deviation
 
 end module m_um
