@@ -19,6 +19,7 @@ The thermosphere model **DTM2020** is also available separately. Two versions ex
    :maxdepth: 2
    :caption: Index
 
+   SWAMI Website <http://swami-h2020.eu/>
    first-steps.rst
    um.rst
    dtm2020.rst
