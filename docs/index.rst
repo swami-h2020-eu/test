@@ -17,7 +17,7 @@ The thermosphere model **DTM2020** is also available separately. Two versions ex
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents
+   :caption: Index
 
    first-steps.rst
    um.rst
