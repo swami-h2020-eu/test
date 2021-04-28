@@ -193,7 +193,7 @@ Go to :ref:`Drag Temperature Model (DTM2020)`) for some theoretical details abou
 
 .. f:autosubroutine:: m_dtm/get_dtm2020_dens_uncertainty
 
-.. py:class:: t_mcm_out
+.. py:class:: t_dtm_out
 
       .. py:attribute:: dens
          :type: float
