@@ -95,8 +95,6 @@ This module contains routines related to the MCM model, which combines the DTM (
 
 .. f:autosubroutine:: m_mcm/get_mcm
 
-.. f:autotype:: m_mcm/t_mcm_out
-
 .. py:class:: t_mcm_out
 
    .. py:attribute:: dens
@@ -184,8 +182,6 @@ Go to :ref:`Drag Temperature Model (DTM2020)`) for some theoretical details abou
     call get_dtm2020(dens, temp, alti, lati, long, loct, doy, f107, f107m, kps(2))
     call get_dtm2020_dens_uncertainty(dens_unc, temp, alti, lati, long, loct, doy, f107, f107m, kps(2))
 
-
-.. f:autovariable:: m_dtm/DTM2020_DATA_FILENAME
 
 .. py:data:: DTM2020_DATA_FILENAME
    :type: string
